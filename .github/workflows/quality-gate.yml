@@ -24,9 +24,14 @@ jobs:
 #      - name: Build and Test with Gradle
 #        run: ./gradlew --no-daemon clean check test --fail-fast
       - name: Create annotation for build error
-        run: echo "::warning file=src/DemoApplication.java,line=9::Testing annotation"
+        run: echo "::warning file=src/main/java/com/example/demo/DemoApplication.java,line=9::Testing annotation"
       - name: Create Temporary Directory
         run: mkdir tmp
+      - name: Produce Output
+        id: producer_output
+        run: echo "result=Test output" >> $GITHUB_OUTPUT
+      - name: Consume Output
+        run: echo "Output = ${{steps.producer_step.outputs.result}}"
       - name: Generate Example Table
         run: |
           touch tmp/warnings_table.txt
