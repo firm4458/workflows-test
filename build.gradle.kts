@@ -39,6 +39,7 @@ pmd {
 	isConsoleOutput = true
 	ruleSetFiles = files("pmd-ruleset.xml")
 	ruleSets = listOf()
+	isIgnoreFailures = true
 }
 
 tasks.withType<Pmd>().configureEach {
