@@ -28,7 +28,7 @@ jobs:
       - name: Create Temporary Directory
         run: mkdir tmp
       - name: Produce Output
-        id: producer_output
+        id: producer_step
         run: echo "result=Test output" >> $GITHUB_OUTPUT
       - name: Consume Output
         run: echo "Output = ${{steps.producer_step.outputs.result}}"
