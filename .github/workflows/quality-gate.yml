@@ -48,7 +48,7 @@ jobs:
           echo "PMD" >> tmp/warnings_table.txt
           echo "|Type|Message|Location" >> tmp/warnings_table.txt
           echo "|--|--|--|" >> tmp/warnings_table.txt
-          jq -r '.runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring)' main.sarif.json >> tmp/warnings_table.txt
+          jq -r '.runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring)' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v3
         with:
