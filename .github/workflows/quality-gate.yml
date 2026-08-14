@@ -14,15 +14,15 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-#      - name: Setup Java
-#        uses: actions/setup-java@v5
-#        with:
-#          distribution: 'temurin'
-#          java-version: 25
-#      - name: Setup Gradle
-#        uses: gradle/actions/setup-gradle@v5
-#      - name: Build and Test with Gradle
-#        run: ./gradlew --no-daemon clean check test --fail-fast
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 25
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Build and Test with Gradle
+        run: ./gradlew --no-daemon clean check test --fail-fast
       - name: Create annotation for build error
         run: echo "::warning file=src/main/java/com/example/demo/DemoApplication.java,line=9::Testing annotation"
       - name: Create Temporary Directory
@@ -42,6 +42,12 @@ jobs:
           echo "|Type|Detail|" >> $GITHUB_STEP_SUMMARY
           echo "|--|--|" >> $GITHUB_STEP_SUMMARY
           echo "|Test|テスト|" >> $GITHUB_STEP_SUMMARY
+      - name: Parse PMD result
+        run: |
+          echo "PMD" >> tmp/warnings_table.txt
+          echo "|Type|Message|Location" >> tmp/warnings_table.txt
+          echo "|--|--|--|" >> tmp/warnings_table.txt
+          jq -r '.runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring)' main.sarif.json >> tmp/warnings_table.txt
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v3
         with:

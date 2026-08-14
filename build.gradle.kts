@@ -32,3 +32,17 @@ dependencies {
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+
+pmd {
+	toolVersion = "7.26.0"
+	isConsoleOutput = true
+	ruleSetFiles = files("pmd-ruleset.xml")
+	ruleSets = listOf()
+}
+
+tasks.withType<Pmd>().configureEach {
+	reports {
+		sarif.required.set(true)
+	}
+}
