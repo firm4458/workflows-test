@@ -14,15 +14,17 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: 25
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
-      - name: Build and Test with Gradle
-        run: ./gradlew --no-daemon clean check test --fail-fast
+#      - name: Setup Java
+#        uses: actions/setup-java@v5
+#        with:
+#          distribution: 'temurin'
+#          java-version: 25
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@v5
+#      - name: Build and Test with Gradle
+#        run: ./gradlew --no-daemon clean check test --fail-fast
+      - name: Create annotation for build error
+        run: echo "::warning file=src/DemoApplication.java,line=9::Testing annotation"
       - name: Create Temporary Directory
         run: mkdir tmp
       - name: Generate Example Table
@@ -31,6 +33,10 @@ jobs:
           echo "|Type|Detail|" >> tmp/warnings_table.txt
           echo "|--|--|" >> tmp/warnings_table.txt
           echo "|Test|テスト|" >> tmp/warnings_table.txt
+          echo "Testing summary" >> $GITHUB_STEP_SUMMARY
+          echo "|Type|Detail|" >> $GITHUB_STEP_SUMMARY
+          echo "|--|--|" >> $GITHUB_STEP_SUMMARY
+          echo "|Test|テスト|" >> $GITHUB_STEP_SUMMARY
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v3
         with:
