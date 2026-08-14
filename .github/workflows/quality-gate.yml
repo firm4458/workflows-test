@@ -1,0 +1,25 @@
+name: Tests
+on:
+  pull_request:
+    types: [ opened, reopened, synchronize, ready_for_review ]
+jobs:
+  test:
+    name: Run Test Code
+    # プルリクエストがdraft,release,docの時は実行しない
+    if: |
+      github.event.pull_request.draft == false
+      && !startsWith(github.head_ref, 'release')
+      && !startsWith(github.head_ref, 'doc')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 25
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Build and Test with Gradle
+        run: ./gradlew --no-daemon clean check test --fail-fast
