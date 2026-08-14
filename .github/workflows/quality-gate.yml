@@ -23,6 +23,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
       - name: Build and Test with Gradle
         run: ./gradlew --no-daemon clean check test --fail-fast
+      - name: Create Temporary Directory
+        run: mkdir tmp
       - name: Generate Example Table
         run: |
           touch tmp/warnings_table.txt
