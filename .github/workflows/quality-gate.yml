@@ -35,28 +35,17 @@ jobs:
         run: echo "result=Test output" >> $GITHUB_OUTPUT
       - name: Consume Output
         run: echo "Output = ${{steps.producer_step.outputs.result}}"
-      - name: Generate Example Table
-        run: |
-          touch tmp/warnings_table.txt
-          echo "|Type|Detail|" >> tmp/warnings_table.txt
-          echo "|--|--|" >> tmp/warnings_table.txt
-          echo "|Test|テスト|" >> tmp/warnings_table.txt
-          echo "Testing summary" >> $GITHUB_STEP_SUMMARY
-          echo "|Type|Detail|" >> $GITHUB_STEP_SUMMARY
-          echo "|--|--|" >> $GITHUB_STEP_SUMMARY
-          echo "|Test|テスト|\n" >> $GITHUB_STEP_SUMMARY
       - name: Find Warning Suppressions
         run: |
           git fetch origin ${{ github.base_ref }}
-          # Run the diff using three-dot or two-dot notation
           echo "\n\n:warning:New Warning Suppressions:warning:\n" >> tmp/warning_tables.txt
-          git diff origin/${{ github.base_ref }}...HEAD -G "@SuppressWarning" >>  tmp/warning_tables.txt
+          git diff -G"@SuppressWarnings" origin/main...HEAD | grep "@SuppressWarnings" -C 3 >>  tmp/warning_tables.txt
       - name: Parse PMD result
         run: |
           echo "\n\nPMD\n" >> tmp/warnings_table.txt
           echo "|Type|Message|Location|" >> tmp/warnings_table.txt
           echo "|--|--|--|" >> tmp/warnings_table.txt
-          jq -r '"|" + .runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|\n"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
+          jq -r '.runs[].results[] | "|" + .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|\n"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
           [ "$(jq '.runs[0].results | length' build/reports/pmd/main.sarif.json)" -ne 0 ] && exit 1
       - name: Comment PR
         if: always()
