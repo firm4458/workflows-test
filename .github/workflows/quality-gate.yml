@@ -50,6 +50,12 @@ jobs:
           echo "|Type|Message|Location|" >> tmp/warnings_table.txt
           echo "|--|--|--|" >> tmp/warnings_table.txt
           jq -r '.runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|\n"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
+      - name: Find Warning Suppressions
+        run:
+          git fetch origin ${{ github.base_ref }}
+          # Run the diff using three-dot or two-dot notation
+          echo "\n\n:warning:New Warning Suppressions:warning:\n" >> tmp/warning_tables.txt
+          git diff origin/${{ github.base_ref }}...HEAD -G "@SuppressWarning" >>  tmp/warning_tables.txt
       - name: Comment PR
         if: failure()
         uses: thollander/actions-comment-pull-request@v3
