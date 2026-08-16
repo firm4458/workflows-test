@@ -51,6 +51,7 @@ jobs:
           echo "|--|--|--|" >> tmp/warnings_table.txt
           jq -r '.runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|\n"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
       - name: Comment PR
+        if: failure()
         uses: thollander/actions-comment-pull-request@v3
         with:
           file-path: tmp/warnings_table.txt
