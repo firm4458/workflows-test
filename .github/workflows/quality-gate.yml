@@ -45,11 +45,11 @@ jobs:
           echo "|Test|テスト|\n" >> $GITHUB_STEP_SUMMARY
       - name: Parse PMD result
         run: |
-          [ "$(jq '.runs[0].results | length' build/reports/pmd/main.sarif.json)" -ne 0 ] && exit 1
           echo "\nPMD" >> tmp/warnings_table.txt
           echo "|Type|Message|Location|" >> tmp/warnings_table.txt
           echo "|--|--|--|" >> tmp/warnings_table.txt
           jq -r '.runs[].results[] | .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|\n"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
+          [ "$(jq '.runs[0].results | length' build/reports/pmd/main.sarif.json)" -ne 0 ] && exit 1
       - name: Find Warning Suppressions
         run: |
           git fetch origin ${{ github.base_ref }}
