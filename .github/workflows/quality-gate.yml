@@ -37,9 +37,11 @@ jobs:
         run: echo "Output = ${{steps.producer_step.outputs.result}}"
       - name: Find Warning Suppressions
         run: |
+          chmod +x .github/scripts/report-suppress-warnings.sh 
           git fetch origin ${{ github.base_ref }}
           echo "\n\n:warning:New Warning Suppressions:warning:\n" >> tmp/warning_table.txt
-          git diff origin/${{ github.base_ref }}...HEAD -G"@SuppressWarnings" >>  tmp/warnings_table.txt
+          .github/scripts/report-suppress-warnings.sh tmp/warnings_table.txt origin/main
+#          git diff origin/${{ github.base_ref }}...HEAD -G"@SuppressWarnings" >>  tmp/warnings_table.txt
 #      - name: Parse PMD result
 #        run: |
 #          echo "\n\nPMD\n" >> tmp/warnings_table.txt
