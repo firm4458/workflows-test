@@ -42,7 +42,7 @@ jobs:
           .github/scripts/report-suppress-warnings.sh tmp/warnings_table.txt origin/main
       - name: Parse PMD result
         run: |
-          echo "\n\nPMD\n" >> tmp/warnings_table.txt
+          echo -e "\n\nPMD\n" >> tmp/warnings_table.txt
           echo "|Type|Message|Location|" >> tmp/warnings_table.txt
           echo "|--|--|--|" >> tmp/warnings_table.txt
           jq -r '.runs[].results[] | "|" + .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt

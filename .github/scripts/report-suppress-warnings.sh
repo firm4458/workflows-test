@@ -38,7 +38,28 @@ gha_escape() {
   printf '%s' "$s"
 }
 
-print_context() {
+# Base URL for GitHub blob permalinks (https://github.com/owner/repo/blob/<sha>).
+repo_blob_url() {
+  local sha
+  sha=$(git rev-parse HEAD)
+  if [[ -n "${GITHUB_SERVER_URL:-}" && -n "${GITHUB_REPOSITORY:-}" ]]; then
+    printf '%s/%s/blob/%s' "${GITHUB_SERVER_URL%/}" "$GITHUB_REPOSITORY" "$sha"
+    return
+  fi
+  local origin
+  origin=$(git remote get-url origin)
+  origin=${origin%.git}
+  if [[ "$origin" =~ ^git@([^:]+):(.+)$ ]]; then
+    origin="https://${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  elif [[ "$origin" =~ ^ssh://git@([^/]+)/(.+)$ ]]; then
+    origin="https://${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+  fi
+  printf '%s/blob/%s' "$origin" "$sha"
+}
+
+# Permalink GitHub will auto-embed as a code snippet in PR comments.
+# https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet
+print_permalink() {
   local file=$1
   local line=$2
   local start=$((line - CONTEXT))
@@ -49,18 +70,16 @@ print_context() {
   total=$(wc -l < "$file" | tr -d ' ')
   [[ $end -gt $total ]] && end=$total
 
-  local n=$start
-  local content
-  while IFS= read -r content; do
-    printf '%6d | %s\n' "$n" "$content"
-    n=$((n + 1))
-  done < <(sed -n "${start},${end}p" "$file")
+  local range="L${start}"
+  [[ $start -ne $end ]] && range="L${start}-L${end}"
+
+  printf '%s/%s#%s\n' "$(repo_blob_url)" "$file" "$range"
 }
 
 files=$(git diff "${BASE_REF}...HEAD" -G"@SuppressWarnings" --name-only | grep "\.java" || true)
 
 {
-  echo "\n\n# :warning:New Warning Suppressions:warning:\n"
+  echo -e "\n\n# :warning:New Warning Suppressions:warning:\n"
   echo
 } >> "$OUTPUT"
 
@@ -97,9 +116,7 @@ while IFS= read -r file; do
     {
       echo "- [ ] \`${file}:${lineno}\` — \`${label}\`"
       echo
-      echo "  \`\`\`java"
-      print_context "$file" "$lineno"
-      echo "  \`\`\`"
+      print_permalink "$file" "$lineno"
       echo
     } >> "$OUTPUT"
 
