@@ -38,8 +38,8 @@ jobs:
       - name: Find Warning Suppressions
         run: |
           git fetch origin ${{ github.base_ref }}
-          echo "\n\n:warning:New Warning Suppressions:warning:\n" >> tmp/warning_tables.txt
-          git diff origin/${{ github.base_ref }}...HEAD -G"@SuppressWarnings" >>  tmp/warning_tables.txt
+          echo "\n\n:warning:New Warning Suppressions:warning:\n" >> tmp/warning_table.txt
+          git diff origin/${{ github.base_ref }}...HEAD -G"@SuppressWarnings" >>  tmp/warnings_table.txt
 #      - name: Parse PMD result
 #        run: |
 #          echo "\n\nPMD\n" >> tmp/warnings_table.txt
