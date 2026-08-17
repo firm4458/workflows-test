@@ -60,9 +60,9 @@ print_context() {
 files=$(git diff "${BASE_REF}...HEAD" -G"@SuppressWarnings" --name-only | grep "\.java" || true)
 
 {
-  echo "# @SuppressWarnings review"
+  echo "\n\n# :warning:New Warning Suppressions:warning:\n"
   echo
-} > "$OUTPUT"
+} >> "$OUTPUT"
 
 if [[ -z "$files" ]]; then
   echo "No Java files with \`@SuppressWarnings\` changes vs \`${BASE_REF}\`." >> "$OUTPUT"
