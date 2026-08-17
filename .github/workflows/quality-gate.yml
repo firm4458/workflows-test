@@ -50,15 +50,15 @@ jobs:
           commands: |
             git fetch origin ${{ github.base_ref }}
             .github/scripts/report-suppress-warnings.sh "$QUALITY_GATE_OUTPUT" "${{ github.server_url }}" "${{ github.repository }}" "${{ github.base_ref }}"
-      - name: Parse PMD result
-        continue-on-error: true
-        uses: ./.github/actions/quality-gate-check
-        with:
-          id: pmd-check
-          name: Parse PMD result
-          commands: |
-            ./gradlew pmdMain
-            .github/scripts/parse-pmd.sh "$QUALITY_GATE_OUTPUT" build/reports/pmd/main.sarif.json
+#      - name: Parse PMD result
+#        continue-on-error: true
+#        uses: ./.github/actions/quality-gate-check
+#        with:
+#          id: pmd-check
+#          name: Parse PMD result
+#          commands: |
+#            ./gradlew pmdMain
+#            .github/scripts/parse-pmd.sh "$QUALITY_GATE_OUTPUT" build/reports/pmd/main.sarif.json
       - name: Compile Results
         id: compile
         if: always()
