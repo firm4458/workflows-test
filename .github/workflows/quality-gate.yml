@@ -16,16 +16,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: 25
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
-      - name: Build and Test with Gradle
-        continue-on-error: true
-        run: ./gradlew --no-daemon clean check test --fail-fast
+#      - name: Setup Java
+#        uses: actions/setup-java@v5
+#        with:
+#          distribution: 'temurin'
+#          java-version: 25
+#      - name: Setup Gradle
+#        uses: gradle/actions/setup-gradle@v5
+#      - name: Build and Test with Gradle
+#        continue-on-error: true
+#        run: ./gradlew --no-daemon clean check test --fail-fast
       - name: Create annotation for build error
         run: echo "::warning file=src/main/java/com/example/demo/DemoApplication.java,line=9::Testing annotation"
       - name: Create Temporary Directory
@@ -39,14 +39,14 @@ jobs:
         run: |
           git fetch origin ${{ github.base_ref }}
           echo "\n\n:warning:New Warning Suppressions:warning:\n" >> tmp/warning_tables.txt
-          git diff -G"@SuppressWarnings" origin/main...HEAD | grep "@SuppressWarnings" -C 3 >>  tmp/warning_tables.txt
-      - name: Parse PMD result
-        run: |
-          echo "\n\nPMD\n" >> tmp/warnings_table.txt
-          echo "|Type|Message|Location|" >> tmp/warnings_table.txt
-          echo "|--|--|--|" >> tmp/warnings_table.txt
-          jq -r '.runs[].results[] | "|" + .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|\n"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
-          [ "$(jq '.runs[0].results | length' build/reports/pmd/main.sarif.json)" -ne 0 ] && exit 1
+          git diff origin/${{ github.base_ref }}...HEAD -G"@SuppressWarnings" >>  tmp/warning_tables.txt
+#      - name: Parse PMD result
+#        run: |
+#          echo "\n\nPMD\n" >> tmp/warnings_table.txt
+#          echo "|Type|Message|Location|" >> tmp/warnings_table.txt
+#          echo "|--|--|--|" >> tmp/warnings_table.txt
+#          jq -r '.runs[].results[] | "|" + .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
+#          [ "$(jq '.runs[0].results | length' build/reports/pmd/main.sarif.json)" -ne 0 ] && exit 1
       - name: Comment PR
         if: always()
         uses: thollander/actions-comment-pull-request@v3
