@@ -49,6 +49,21 @@ read_status() {
   printf '%s' "$content"
 }
 
+read_should_block() {
+  local should_block_file=$1
+  if [[ ! -f "$should_block_file" ]]; then
+    printf '%s' "false"
+    return
+  fi
+  local content
+  content=$(trim "$(<"$should_block_file")")
+  if [[ -z "$content" ]]; then
+    printf '%s' "false"
+    return
+  fi
+  printf '%s' "$content"
+}
+
 read_name() {
   local name_file=$1
   local fallback=$2
@@ -85,10 +100,11 @@ if [[ ${#dirs[@]} -gt 0 ]]; then
     id=$(basename "$dir")
     status=$(read_status "${dir}status")
     name=$(read_name "${dir}name" "$id")
+    should_block=$(read_should_block "${dir}block")
     names+=("$name")
     statuses+=("$status")
     normalized=$(printf '%s' "$status" | tr '[:upper:]' '[:lower:]')
-    if [[ "$normalized" == "fail" || "$normalized" == "not run" ]]; then
+    if [[ $should_block == "true" ]]; then
       unsuccessful=1
     fi
     all_results+=("$i")

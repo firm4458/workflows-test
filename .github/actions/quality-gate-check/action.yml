@@ -11,18 +11,14 @@ inputs:
   commands:
     description: Shell commands to run for this check
     required: true
+  blocking:
+    description: Whether non-success status blocks the PR
+    required: false
+    default: "true"
   output-directory:
     description: Root directory for check results. Defaults to the OUTPUT_DIRECTORY env.
     required: false
     default: ''
-
-outputs:
-  status:
-    description: Recorded check status (success or fail)
-    value: ${{ steps.run.outputs.status }}
-  output-directory:
-    description: Directory for this check's status and output.md
-    value: ${{ steps.run.outputs.output-directory || format('{0}/{1}', inputs.output-directory, inputs.id) }}
 
 runs:
   using: composite
@@ -34,5 +30,9 @@ runs:
         QUALITY_GATE_ID: ${{ inputs.id }}
         QUALITY_GATE_NAME: ${{ inputs.name }}
         QUALITY_GATE_COMMANDS: ${{ inputs.commands }}
+        QUALITY_GATE_BLOCKING_CHECK: ${{ inputs.blocking }}
         QUALITY_GATE_OUTPUT_ROOT: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}
+        QUALITY_GATE_OUTPUT: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}/output.md
+        QUALITY_GATE_STATUS: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}/status
+        QUALITY_GATE_SHOULD_BLOCK: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}/block
       run: bash "${{ github.action_path }}/run.sh"

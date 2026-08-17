@@ -81,7 +81,7 @@ while IFS= read -r file; do
 done <<< "$files"
 
 if [[ "$found" -ne 0 ]]; then
-  if [[ -n "${QUALITY_GATE_DIR:-}" && -f "${QUALITY_GATE_DIR}/status" ]]; then
-    echo "warning" > "${QUALITY_GATE_DIR}/status"
-  fi
+  exit 2
+else
+  exit 0
 fi
