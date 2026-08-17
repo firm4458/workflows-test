@@ -1,9 +1,11 @@
-name: Tests
+name: Quality Gate
 on:
   pull_request:
     types: [ opened, reopened, synchronize, ready_for_review ]
+env:
+  OUTPUT_DIRECTORY: /tmp/quality-gate/output
 jobs:
-  test:
+  quality-gate:
     name: Quality Gate
     # プルリクエストがdraft,release,docの時は実行しない
     if: |
@@ -23,59 +25,46 @@ jobs:
           java-version: 25
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
-      - name: Build and Test with Gradle
+      - name: Add Executable Permission
+        run: find .github/scripts/ -type f -exec chmod +x {} +
+      - name: Test with Gradle
         continue-on-error: true
-        run: ./gradlew --no-daemon clean check test --fail-fast
-      - name: Create annotation for build error
-        run: echo "::warning file=src/main/java/com/example/demo/DemoApplication.java,line=9::Testing annotation"
-      - name: Create Temporary Directory
-        run: mkdir tmp
-      - name: Produce Output
-        id: producer_step
-        run: echo "result=Test output" >> $GITHUB_OUTPUT
-      - name: Consume Output
-        run: echo "Output = ${{steps.producer_step.outputs.result}}"
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: gradle-tests
+          name: Test with Gradle
+          commands: ./gradlew test --fail-fast
+      - name: Check Formatting
+        continue-on-error: true
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: gradle-spotless
+          name: Check Formatting
+          commands: ./gradlew spotlessCheck
       - name: Find Warning Suppressions
-        run: |
-          chmod +x .github/scripts/report-suppress-warnings.sh 
-          git fetch origin ${{ github.base_ref }}
-          .github/scripts/report-suppress-warnings.sh tmp/warnings_table.txt "${{ github.server_url }}" "${{ github.repository }}" origin/main
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: warning-suppressions-check
+          name: Find Warning Suppressions
+          commands: |
+            git fetch origin ${{ github.base_ref }}
+            .github/scripts/report-suppress-warnings.sh "$QUALITY_GATE_OUTPUT" "${{ github.server_url }}" "${{ github.repository }}" "${{ github.base_ref }}"
       - name: Parse PMD result
-        run: |
-          echo -e "\n\nPMD\n" >> tmp/warnings_table.txt
-          echo "|Type|Message|Location|" >> tmp/warnings_table.txt
-          echo "|--|--|--|" >> tmp/warnings_table.txt
-          jq -r '.runs[].results[] | "|" + .ruleId + "|" + .message.text + "|" + .locations[0].physicalLocation.artifactLocation.uri + ":" + (.locations[0].physicalLocation.region.startLine | tostring) + "-" + (.locations[0].physicalLocation.region.endLine | tostring) + "|"' build/reports/pmd/main.sarif.json >> tmp/warnings_table.txt
-          # GitHub workflow annotations so findings are marked on the PR files view.
-          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-error-message
-          jq -r --arg workspace "${GITHUB_WORKSPACE}" '
-            def gha_prop:
-              gsub("%"; "%25") | gsub("\r"; "%0D") | gsub("\n"; "%0A") | gsub(":"; "%3A") | gsub(","; "%2C");
-            def gha_msg:
-              gsub("%"; "%25") | gsub("\r"; "%0D") | gsub("\n"; "%0A");
-            .runs[].results[] |
-            . as $r |
-            .locations[0].physicalLocation as $loc |
-            ($loc.artifactLocation.uri
-              | sub("^file://"; "")
-              | if ($workspace | length) > 0 and startswith($workspace + "/")
-                then .[$workspace | length + 1:]
-                else . end) as $file |
-            "::error " +
-            ([
-              "file=\($file | gha_prop)",
-              "line=\($loc.region.startLine)",
-              (if $loc.region.endLine then "endLine=\($loc.region.endLine)" else empty end),
-              (if $loc.region.startColumn then "col=\($loc.region.startColumn)" else empty end),
-              (if $loc.region.endColumn then "endColumn=\($loc.region.endColumn)" else empty end),
-              "title=\($r.ruleId | gha_prop)"
-            ] | join(",")) +
-            "::\($r.message.text | gha_msg)"
-          ' build/reports/pmd/main.sarif.json
-          [ "$(jq '.runs[0].results | length' build/reports/pmd/main.sarif.json)" -ne 0 ] && exit 1
+        continue-on-error: true
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: pmd-check
+          name: Parse PMD result
+          commands: |
+            ./gradlew pmdMain
+            .github/scripts/parse-pmd.sh "$QUALITY_GATE_OUTPUT" build/reports/pmd/main.sarif.json
+      - name: Compile Results
+        id: compile
+        if: always()
+        uses: ./.github/actions/quality-gate-compile
       - name: Comment PR
         if: always()
         uses: thollander/actions-comment-pull-request@v3
         with:
-          file-path: tmp/warnings_table.txt
+          file-path: ${{ steps.compile.outputs.report }}
           comment-tag: warnings_table
