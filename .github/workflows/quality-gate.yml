@@ -39,7 +39,7 @@ jobs:
         run: |
           chmod +x .github/scripts/report-suppress-warnings.sh 
           git fetch origin ${{ github.base_ref }}
-          .github/scripts/report-suppress-warnings.sh tmp/warnings_table.txt origin/main
+          .github/scripts/report-suppress-warnings.sh tmp/warnings_table.txt "${{ github.server_url }}" "${{ github.repository }}" origin/main
       - name: Parse PMD result
         run: |
           echo -e "\n\nPMD\n" >> tmp/warnings_table.txt

@@ -4,17 +4,19 @@
 # to the given file, and emits GitHub Actions workflow commands on stdout
 # so those lines are annotated on the PR.
 #
-# Usage: report-suppress-warnings.sh <output.md> [base-ref]
+# Usage: report-suppress-warnings.sh <output.md> <server-url> <repository> [base-ref]
 # Requires origin/main (use fetch-depth: 0, or git fetch origin main).
 set -euo pipefail
 
-if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 <output.md> [base-ref]" >&2
+if [[ $# -lt 3 ]]; then
+  echo "Usage: $0 <output.md> <server-url> <repository> [base-ref]" >&2
   exit 1
 fi
 
 OUTPUT=$1
-BASE_REF=${2:-origin/main}
+GITHUB_SERVER_URL=$2
+GITHUB_REPOSITORY=$3
+BASE_REF=${4:-origin/main}
 if [[ "$OUTPUT" != /* ]]; then
   OUTPUT="$(pwd)/$OUTPUT"
 fi
@@ -38,25 +40,6 @@ gha_escape() {
   printf '%s' "$s"
 }
 
-# Base URL for GitHub blob permalinks (https://github.com/owner/repo/blob/<sha>).
-repo_blob_url() {
-  local sha
-  sha=$(git rev-parse HEAD)
-  if [[ -n "${GITHUB_SERVER_URL:-}" && -n "${GITHUB_REPOSITORY:-}" ]]; then
-    printf '%s/%s/blob/%s' "${GITHUB_SERVER_URL%/}" "$GITHUB_REPOSITORY" "$sha"
-    return
-  fi
-  local origin
-  origin=$(git remote get-url origin)
-  origin=${origin%.git}
-  if [[ "$origin" =~ ^git@([^:]+):(.+)$ ]]; then
-    origin="https://${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
-  elif [[ "$origin" =~ ^ssh://git@([^/]+)/(.+)$ ]]; then
-    origin="https://${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
-  fi
-  printf '%s/blob/%s' "$origin" "$sha"
-}
-
 # Permalink GitHub will auto-embed as a code snippet in PR comments.
 # https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet
 print_permalink() {
@@ -73,7 +56,7 @@ print_permalink() {
   local range="L${start}"
   [[ $start -ne $end ]] && range="L${start}-L${end}"
 
-  printf '%s/%s#%s\n' "$(repo_blob_url)" "$file" "$range"
+  printf '%s/%s/blob/%s/%s#%s\n' "${GITHUB_SERVER_URL%/}" "$GITHUB_REPOSITORY" "$(git rev-parse HEAD)" "$file" "$range"
 }
 
 files=$(git diff "${BASE_REF}...HEAD" -G"@SuppressWarnings" --name-only | grep "\.java" || true)
