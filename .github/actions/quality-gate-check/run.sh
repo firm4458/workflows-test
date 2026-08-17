@@ -44,10 +44,10 @@ printf '%s' "$status" > "$QUALITY_GATE_STATUS"
 
 if [[ $exit_code -ne 0 &&  "${QUALITY_GATE_BLOCKING_CHECK,,}" == "true" ]]; then
   printf 'true' > "$QUALITY_GATE_SHOULD_BLOCK"
-  final_exit_code=0
+  final_exit_code=1
 else
   printf 'false' > "$QUALITY_GATE_SHOULD_BLOCK"
-  final_exit_code=1
+  final_exit_code=0
 fi
 
 exit "$final_exit_code"
