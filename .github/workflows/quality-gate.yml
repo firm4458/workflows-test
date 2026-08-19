@@ -2,6 +2,8 @@ name: Quality Gate
 on:
   pull_request:
     types: [ opened, reopened, synchronize, ready_for_review ]
+permissions:
+  pull-requests: write
 env:
   OUTPUT_DIRECTORY: /tmp/quality-gate/output
 jobs:
