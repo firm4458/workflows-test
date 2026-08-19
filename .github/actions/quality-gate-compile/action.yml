@@ -1,0 +1,28 @@
+name: Quality Gate Compile
+description: Compile per-check quality-gate results into a single markdown report.
+
+inputs:
+  output-directory:
+    description: Root directory containing per-check result subdirectories. Defaults to the OUTPUT_DIRECTORY env.
+    required: false
+    default: ''
+  report:
+    description: Path to write the compiled markdown report. Defaults to <output-directory>/results.md.
+    required: false
+    default: ''
+
+outputs:
+  report:
+    description: Path to the compiled markdown report
+    value: ${{ steps.compile.outputs.report || format('{0}/results.md', inputs.output-directory) }}
+
+runs:
+  using: composite
+  steps:
+    - id: compile
+      name: Compile Results
+      shell: bash
+      env:
+        QUALITY_GATE_OUTPUT_ROOT: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}
+        QUALITY_GATE_REPORT: ${{ inputs.report }}
+      run: bash "${{ github.action_path }}/run.sh"

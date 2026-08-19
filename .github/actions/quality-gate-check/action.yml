@@ -1,0 +1,38 @@
+name: Quality Gate Check
+description: Run a quality-gate check, set up its output directory, and record status.
+
+inputs:
+  id:
+    description: Check id (results subdirectory name under OUTPUT_DIRECTORY)
+    required: true
+  name:
+    description: Human-readable check name (step title and report heading)
+    required: true
+  commands:
+    description: Shell commands to run for this check
+    required: true
+  blocking:
+    description: Whether non-success status blocks the PR
+    required: false
+    default: "true"
+  output-directory:
+    description: Root directory for check results. Defaults to the OUTPUT_DIRECTORY env.
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      name: ${{ inputs.name }}
+      shell: bash
+      env:
+        QUALITY_GATE_ID: ${{ inputs.id }}
+        QUALITY_GATE_NAME: ${{ inputs.name }}
+        QUALITY_GATE_COMMANDS: ${{ inputs.commands }}
+        QUALITY_GATE_BLOCKING_CHECK: ${{ inputs.blocking }}
+        QUALITY_GATE_OUTPUT_ROOT: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}
+        QUALITY_GATE_OUTPUT: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}/output.md
+        QUALITY_GATE_STATUS: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}/status
+        QUALITY_GATE_SHOULD_BLOCK: ${{ inputs.output-directory || env.OUTPUT_DIRECTORY }}/block
+      run: bash "${{ github.action_path }}/run.sh"

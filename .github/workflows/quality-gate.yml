@@ -1,10 +1,14 @@
-name: Tests
+name: Quality Gate
 on:
   pull_request:
     types: [ opened, reopened, synchronize, ready_for_review ]
+permissions:
+  pull-requests: write
+env:
+  OUTPUT_DIRECTORY: /tmp/quality-gate/output
 jobs:
-  test:
-    name: Run Test Code
+  quality-gate:
+    name: Quality Gate
     # プルリクエストがdraft,release,docの時は実行しない
     if: |
       github.event.pull_request.draft == false
@@ -14,12 +18,56 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: 25
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v5
-      - name: Build and Test with Gradle
-        run: ./gradlew --no-daemon clean check test --fail-fast
+      - name: Add Executable Permission
+        run: find .github/scripts/ -type f -exec chmod +x {} +
+      - name: Test with Gradle
+        continue-on-error: true
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: gradle-tests
+          name: Test with Gradle
+          commands: ./gradlew test --fail-fast
+      - name: Check Formatting
+        continue-on-error: true
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: gradle-spotless
+          name: Check Formatting
+          commands: ./gradlew spotlessCheck
+      - name: Find Warning Suppressions
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: warning-suppressions-check
+          name: Find Warning Suppressions
+          blocking: false
+          commands: |
+            git fetch origin ${{ github.base_ref }}
+            .github/scripts/report-suppress-warnings.sh "$QUALITY_GATE_OUTPUT" "${{ github.server_url }}" "${{ github.repository }}" "${{ github.base_ref }}"
+      - name: Parse PMD result
+        continue-on-error: true
+        uses: ./.github/actions/quality-gate-check
+        with:
+          id: pmd-check
+          name: Parse PMD result
+          commands: |
+            ./gradlew pmdMain
+            .github/scripts/parse-pmd.sh "$QUALITY_GATE_OUTPUT" build/reports/pmd/main.sarif.json
+      - name: Compile Results
+        id: compile
+        if: always()
+        uses: ./.github/actions/quality-gate-compile
+      - name: Comment PR
+        if: always()
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: ${{ steps.compile.outputs.report }}
+          comment-tag: warnings_table
